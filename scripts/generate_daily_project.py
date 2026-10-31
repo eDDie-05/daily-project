@@ -23,7 +23,7 @@ def fail(message: str) -> None:
 
 def request_json(url: str, method: str = "GET", token: str | None = None,
                  payload: dict | None = None, openai: bool = False) -> dict:
-    headers = {"Accept": "application/vnd.github+json"}
+    headers = {"Accept": "application/json" if openai else "application/vnd.github+json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
     if openai:
@@ -136,17 +136,18 @@ def validate_project(project: dict) -> tuple[str, str, str]:
         fail("Generated project description is missing or too long.")
     if not html or len(html.encode("utf-8")) > MAX_HTML_BYTES:
         fail("Generated HTML is empty or exceeds the 300 KB limit.")
-    if not re.match(r"(?is)^<!doctype html\\b", html):
+    if not re.match(r"(?is)^<!doctype html\b", html):
         fail("Generated HTML is not a complete HTML document.")
-    if not re.search(r"(?is)<html\\b", html) or not re.search(r"(?is)</html\\s*>", html):
+    if not re.search(r"(?is)<html\b", html) or not re.search(r"(?is)</html\s*>", html):
         fail("Generated HTML is missing its document element.")
     blocked = [
-        (r"(?is)<(?:iframe|object|embed)\\b", "embedded content"),
-        (r"(?is)<script\\b[^>]*\\bsrc\\s*=", "external scripts"),
-        (r"(?is)<link\\b[^>]*\\bhref\\s*=\\s*['\\"]https?://", "remote stylesheets"),
-        (r"(?is)\\b(?:fetch|XMLHttpRequest|WebSocket|EventSource)\\b", "network calls"),
-        (r"(?is)\\b(?:eval|Function)\\s*\\(", "dynamic code execution"),
-        (r"(?is)javascript\\s*:", "javascript URLs"),
+        (r"(?is)<(?:iframe|object|embed)\b", "embedded content"),
+        (r"https?://", "external URLs"),
+        (r"(?is)<script\b[^>]*\bsrc\s*=", "external scripts"),
+        (r"(?is)<link\b[^>]*\bhref\s*=\s*['\"]https?://", "remote stylesheets"),
+        (r"(?is)\b(?:fetch|XMLHttpRequest|WebSocket|EventSource)\b", "network calls"),
+        (r"(?is)\b(?:eval|Function)\s*\(", "dynamic code execution"),
+        (r"(?is)javascript\s*:", "javascript URLs"),
     ]
     for pattern, label in blocked:
         if re.search(pattern, html):
@@ -195,9 +196,9 @@ def publish_project(owner: str, repo: str, title: str, description: str,
     )
     readme_file = request_json(readme_url, token=token)
     readme = (
-        f"# {title}\\n\\n{description}\\n\\n"
+        f"# {title}\n\n{description}\n\n"
         f"Generated automatically on {dt.datetime.now(dt.timezone.utc).date()}. "
-        "Review the code before using it.\\n"
+        "Review the code before using it.\n"
     )
     put_file(owner, repo, branch, "README.md", readme,
              "Add generated project overview", token, readme_file.get("sha"))
