@@ -21,4 +21,4 @@ The workflow runs daily at 06:00 UTC (09:00 Africa/Mogadishu). You can also star
 
 The generator creates private repositories, skips a date if its repository already exists, and only uploads `README.md` and `index.html`. Generated code is not executed by the workflow. Review each project before using it.
 
-If either secret is missing or lacks the required access, the workflow stops with a setup error rather than making a partial project.
+Missing secrets stop the run before it creates a repository. If GitHub rejects a later file upload, the workflow fails and the new private repository may need manual cleanup.
