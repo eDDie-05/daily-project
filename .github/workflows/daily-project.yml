@@ -1,6 +1,10 @@
 name: Daily project generator
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/daily-project.yml
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
